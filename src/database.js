@@ -25,7 +25,9 @@ export class Database {
     if (search) {
       data = data.filter((row) => {
         return Object.entries(search).some(([key, value]) => {
-          return row[key].toLowerCase().includes(value.toLowerCase())
+          return decodeURI(row[key].toLowerCase()).includes(
+            decodeURI(value.toLowerCase()),
+          )
         })
       })
     }
@@ -49,7 +51,13 @@ export class Database {
     const rowIndex = this.#database[table].findIndex((row) => row.id === id)
 
     if (rowIndex > -1) {
-      this.#database[table][rowIndex] = { id, ...data }
+      this.#database[table][rowIndex] = {
+        ...this.#database[table][rowIndex],
+        title: data.title ?? this.#database[table][rowIndex].title,
+        description:
+          data.description ?? this.#database[table][rowIndex].description,
+        updated_at: new Date(),
+      }
       this.#persist()
     }
   }
@@ -59,6 +67,20 @@ export class Database {
 
     if (rowIndex > -1) {
       this.#database[table].splice(rowIndex, 1)
+      this.#persist()
+    }
+  }
+
+  complete(table, id) {
+    const rowIndex = this.#database[table].findIndex((row) => row.id === id)
+
+    if (rowIndex > -1) {
+      this.#database[table][rowIndex] = {
+        ...this.#database[table][rowIndex],
+        completed_at: !!this.#database[table][rowIndex].completed_at
+          ? null
+          : new Date(),
+      }
       this.#persist()
     }
   }
